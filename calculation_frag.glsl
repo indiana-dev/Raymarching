@@ -7,6 +7,9 @@ uniform float MAX_DIST;
 uniform mat4 viewMatrix;
 uniform vec3 camPos;
 
+uniform float debugA;
+uniform float debugB;
+
 in vec2 uv;
 out vec4 pixel;
 
@@ -21,12 +24,12 @@ out vec4 pixel;
 const int MAX_MARCHING_STEPS = 1000;
 const float MIN_DIST = 0.0;
 // const float MAX_DIST = 100.0;
-const float EPSILON = 0.001;
+const float EPSILON = 0.01;
 
 float fSphere(vec3 p, float r) {
-    vec3 c = vec3(50);
+    vec3 c = vec3(5.+iTime*5.);
     vec3 q = mod(p+0.5*c,c)-0.5*c;
-	return length(p) - r;
+	return length(q) - r;
 }
 
 /**
@@ -196,6 +199,33 @@ vec3 rayDirection(float fieldOfView, vec2 size, vec2 fragCoord) {
     return normalize(vec3(xy, -z));
 }
 
+/**
+ * distToScene: the distance from the hit point to the scene excluding the plane
+ * distToPoint: the distance from the camera to the hit point
+ * frequency: the frequency of the isolines
+ * thickness: the thickness of the isolines
+ * smoothness: the range that will be used in smoothstep to smooth the border of the isolines
+ * minDistance: the minimum distance at which the lines should appear
+ * maxDistance: the maximum distance at which the lines should appear 
+ */
+vec3 createIsolines(float distToScene, float distToPoint, float frequency, float thickness, float smoothness, float minDistance, float maxDistance) {
+    float fade = distToPoint < minDistance ? smoothstep(minDistance, 0., distToPoint) : smoothstep(minDistance, maxDistance, distToPoint);
+    float c = 0.5+0.5*sin(distToScene*frequency);
+
+    vec3 colStart = vec3(0.57, 0., 0.75);
+    vec3 colMid = vec3(255./255., 216./255., 101./255.);
+    vec3 colEnd = vec3(0.97);
+
+    vec3 base = distToScene < 1. ? mix(colStart, colMid, smoothstep(0., 1., distToScene)) : mix(colMid, colEnd, clamp(0., 2., smoothstep(0., 2., distToScene - 1.)));
+            
+    vec3 col;
+    thickness *= max(1.0, 0.25*distToPoint);
+    col = mix(col, base, smoothstep(thickness, thickness + smoothness, c));
+    col = mix(col, base, fade);
+
+    return col;
+}
+
 void main()
 {
 	vec3 viewDir = rayDirection(45.0, vec2(1.), uv);    
@@ -214,16 +244,15 @@ void main()
         // vec3 colStart = vec3(0.57, 0., 0.75);
         // vec3 colMid = vec3(1., 0.75, 0.);
         // vec3 colEnd = vec3(0.8);
-        // float dst = clamp(dstToScene / 10., 0., 2.);
+//float distToScene, float distToPoint, float frequency, float thickness, float smoothness, float minDistance, float maxDistance) {
+        vec3 col = createIsolines(dstToScene, dist, 1., 0.001, 0.01, 20., 100.);
+        col *= createIsolines(dstToScene, dist, 10., 0.001, 0.01, 10., 20.);
+        col *= createIsolines(dstToScene, dist, 100., 0.001, 0.01, 0., 10.);
 
-        // vec3 planeColor = dst < 1. ? mix(colStart, colMid, dst) : mix(colMid, colEnd, dst - 1.);
-        // pixel = vec4(planeColor, 1.);
+        // Gamma
+        col = pow(col, vec3(0.4545));
         
-        float col = 1.;
-        col *= (mod(dstToScene, 1.) > 0.9 ? 0. : 1.) + dist/300.;
-        col *= (mod(dstToScene, 10.) > 9. ? 0. : 1.) + dist/600.;
-        col *= (mod(dstToScene, 100.) > 90. ? 0. : 1.) + dist/5000.;
-        pixel = vec4(vec3(col),1.);
+        pixel = vec4(col,1.);
         return;
     }
 
@@ -234,7 +263,7 @@ void main()
     }
      
     vec3 K_a = vec3(0.2);
-    vec3 K_d = vec3(mod(p.y + .5,10.) < 5. ? 1. : .2);
+    vec3 K_d = vec3(p/100.);//mod(p.y + .5,10.) < 5. ? 1. : .2);
     vec3 K_s = vec3(1.0, 1.0, 1.0);
     float shininess = 10.;
     

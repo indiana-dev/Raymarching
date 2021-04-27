@@ -13,6 +13,8 @@ class Mouse {
     }
 
     onDrag(x, y) {
+        if (x < 0 || y < 0 || x > screen_size || y > screen_size) return
+        
         const xOffset = x - this.startX
         const yOffset = y - this.startY
         const sensitivity = 0.2

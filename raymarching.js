@@ -9,11 +9,15 @@ loadShaders()
 
 const gui = new dat.GUI()
 let settings = {
-    MAX_DIST: 10000
+    MAX_DIST: 10000,
+    debugA: 0.2,
+    debugB: 0.1
 }
 
 function initGUI() {
     gui.add(settings, 'MAX_DIST', 10, 50000)
+    gui.add(settings, 'debugA', 0.001, 1., 0.001)
+    gui.add(settings, 'debugB', 0.001, 1., 0.001)
 }
 
 class Keyboard {
@@ -34,7 +38,7 @@ class Camera {
         this.pos = pos
         this.yaw = -90
         this.pitch = 0
-        this.speed = 1
+        this.speed = 1.
         this.rotationSpeed = 1
 
         this.updateViewMatrix()
@@ -53,7 +57,7 @@ class Camera {
     }
 
     updatePosition() {
-        const front = vec3(...this.front)
+        const front = mult(vec3(...this.front), vec3(this.speed, this.speed, this.speed))
         if (keyboard.W) this.pos = add(this.pos, front)
         if (keyboard.S) this.pos = subtract(this.pos, front)
         if (keyboard.A) this.pos = subtract(this.pos, normalize(cross(front, this.up)))
@@ -144,18 +148,27 @@ function initUniform(name) {
 
 function initUniforms() {
     const initUniform = (name) => uniforms[name] = gl.getUniformLocation(shader_program, name)
+    const uniform_names = ['iTime', 'MAX_DIST', 'viewMatrix', 'camPos', 'debugA', 'debugB']
     uniforms = []
 
-    initUniform('iTime')
-    initUniform('MAX_DIST')
-    initUniform('viewMatrix')
-    initUniform('camPos')
+    for (let name of uniform_names) {
+        initUniform(name)
+    }
+
+    // initUniform('iTime')
+    // initUniform('MAX_DIST')
+    // initUniform('viewMatrix')
+    // initUniform('camPos')
+    // initUniform('debugA')
+    // initUniform('debugB')
 }
 
 let iTime = 0.;
 function setUniforms() {
     gl.uniform1f(uniforms.iTime, iTime);
     gl.uniform1f(uniforms.MAX_DIST, settings.MAX_DIST)
+    gl.uniform1f(uniforms.debugA, settings.debugA)
+    gl.uniform1f(uniforms.debugB, settings.debugB)
     gl.uniformMatrix4fv(uniforms.viewMatrix, 0, flatten(cam.viewMatrix))
     gl.uniform3f(uniforms.camPos, ...cam.pos)
 }
