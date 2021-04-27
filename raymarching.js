@@ -82,7 +82,7 @@ function waitForShadersToInitialize() {
 }
 
 function main() {
-    cam = new Camera(vec3(1.,2.,0))
+    cam = new Camera(vec3(1.,2.,12))
 
     screen_size = 500
 
