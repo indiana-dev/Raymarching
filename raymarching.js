@@ -9,15 +9,23 @@ loadShaders()
 
 const gui = new dat.GUI()
 let settings = {
-    MAX_DIST: 10000,
+    MAX_DIST: 1000,
+    penumbra: 8,
     debugA: 0.2,
     debugB: 0.1
 }
 
 function initGUI() {
     gui.add(settings, 'MAX_DIST', 10, 50000)
-    gui.add(settings, 'debugA', 0.001, 1., 0.001)
+    gui.add(settings, 'penumbra', 0.001, 100, 0.001)
+    gui.add(settings, 'debugA', 0.001, 100., 0.001)
     gui.add(settings, 'debugB', 0.001, 1., 0.001)
+}
+
+class Light {
+    constructor(x, y, z) {
+        this.pos = vec3(x, y, z)
+    } 
 }
 
 class Keyboard {
@@ -75,6 +83,7 @@ class Camera {
 let cam
 let mouse = new Mouse()
 let keyboard = new Keyboard()
+let light = new Light(40, 30, 10)
 let gl, shader_program, screen_size, uniforms
 
 function waitForShadersToInitialize() {
@@ -86,9 +95,9 @@ function waitForShadersToInitialize() {
 }
 
 function main() {
-    cam = new Camera(vec3(1.,2.,12))
+    cam = new Camera(vec3(10.,2.,12))
 
-    screen_size = 500
+    screen_size = 600
 
     const canvas = document.querySelector("#glCanvas")
     canvas.width = screen_size
@@ -148,29 +157,33 @@ function initUniform(name) {
 
 function initUniforms() {
     const initUniform = (name) => uniforms[name] = gl.getUniformLocation(shader_program, name)
-    const uniform_names = ['iTime', 'MAX_DIST', 'viewMatrix', 'camPos', 'debugA', 'debugB']
+    const uniform_names = [
+        'iTime', 
+        'MAX_DIST', 
+        'viewMatrix', 
+        'camPos', 
+        'lightPos', 
+        'penumbra',
+        'debugA', 
+        'debugB']
+
     uniforms = []
 
     for (let name of uniform_names) {
         initUniform(name)
     }
-
-    // initUniform('iTime')
-    // initUniform('MAX_DIST')
-    // initUniform('viewMatrix')
-    // initUniform('camPos')
-    // initUniform('debugA')
-    // initUniform('debugB')
 }
 
 let iTime = 0.;
 function setUniforms() {
     gl.uniform1f(uniforms.iTime, iTime);
     gl.uniform1f(uniforms.MAX_DIST, settings.MAX_DIST)
+    gl.uniform1f(uniforms.penumbra, settings.penumbra)
     gl.uniform1f(uniforms.debugA, settings.debugA)
     gl.uniform1f(uniforms.debugB, settings.debugB)
     gl.uniformMatrix4fv(uniforms.viewMatrix, 0, flatten(cam.viewMatrix))
     gl.uniform3f(uniforms.camPos, ...cam.pos)
+    gl.uniform3f(uniforms.lightPos, ...light.pos)
 }
 
 function draw() {
