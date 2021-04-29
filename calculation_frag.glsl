@@ -101,7 +101,7 @@ float fOpDifferenceColumns(float a, float b, float r, float n) {
 float fSphere(vec3 p, float r) {
     vec3 c = vec3(5.+iTime*5.);
     vec3 q = mod(p+0.5*c,c)-0.5*c;
-	return length(p) - r;
+	return length(q) - r;
 }
 
 float fBox(vec3 p, vec3 b) {
@@ -129,20 +129,21 @@ float fCylinder(vec3 p, float r, float height) {
  */
 
 float sceneSDF(vec3 p) {
-    float i = pMod1(p.z, 20.);
+    return fSphere(p, 1.);
+    // float i = pMod1(p.z, 20.);
 
-    float wall = fBox2(p.xy, vec2(1., 15.));
+    // float wall = fBox2(p.xy, vec2(1., 15.));
 
-    p.z = abs(p.z)-3.;
-    p.z = abs(p.z)+2.;
+    // p.z = abs(p.z)-3.;
+    // p.z = abs(p.z)+2.;
 
-    float box = fBox(p, vec3(3., 9., 4.));
-    p.y -= 9.;
-    float cylinder = fCylinder(p.yxz, 4., 3.);
+    // float box = fBox(p, vec3(3., 9., 4.));
+    // p.y -= 9.;
+    // float cylinder = fCylinder(p.yxz, 4., 3.);
 
-    float window = min(box, cylinder);
+    // float window = min(box, cylinder);
 
-    return fOpDifferenceColumns(wall, window, 0.6, 3.);
+    // return fOpDifferenceColumns(wall, window, 0.6, 3.);
 }
 
 // Plane with normal n (n is normalized) at some distance from the origin
@@ -366,7 +367,7 @@ void main()
         col *= createIsolines(dstToScene, dist, 100., 0.001, 0.01, 0., 20.);
         // vec3 col = createIsolines(dstToScene, dist, 10., 0.001, 0.01, 1., 200.);
 
-        col *= calculateShadow(p, normalize(lightPos - p), EPSILON*2., length(lightPos - p));
+        // col *= calculateShadow(p, normalize(lightPos - p), EPSILON*2., length(lightPos - p));
 
         // Gamma
         //col = pow(col, vec3(0.4545));
@@ -381,13 +382,13 @@ void main()
 		return;
     }
      
-    vec3 K_a = vec3(1.);
-    vec3 K_d = vec3(1.);//mod(p.y + .5,10.) < 5. ? 1. : .2);
+    vec3 K_a = vec3(0.2);
+    vec3 K_d = vec3(p/100.);//mod(p.y + .5,10.) < 5. ? 1. : .2);
     vec3 K_s = vec3(1.0, 1.0, 1.0);
     float shininess = 10.;
     
     vec3 color = phongIllumination(K_a, K_d, K_s, shininess, p, camPos);
-    color *= calculateShadow(p, normalize(lightPos - p), EPSILON*2., length(lightPos - p));
+    // color *= calculateShadow(p, normalize(lightPos - p), EPSILON*2., length(lightPos - p));
     //color += vec3(0.05);
     pixel = vec4(color, 1.0);
 }
